@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:17
     container_name: sellercabinet-db 
-    environment: 
+    environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -22,7 +22,13 @@ services:
     depends_on:
       db: 
         condition: service_healthy
-    environment: 
+    environment:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      JAVA_TOOL_OPTIONS: >-
+        -Dfile.encoding=UTF-8
+        -Dstdout.encoding=UTF-8
+        -Dstderr.encoding=UTF-8
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/sellercabinet
       SPRING_DATASOURCE_USERNAME: seller_user
       SPRING_DATASOURCE_PASSWORD: seller_pass
@@ -30,6 +36,8 @@ services:
     ports:
       - "8080:8080"
     restart: on-failure
+    stdin_open: true
+    tty: true
 
 volumes:
   pgdata:

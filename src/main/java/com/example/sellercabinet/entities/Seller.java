@@ -1,43 +1,43 @@
 package com.example.sellercabinet.entities;
 
 public class Seller {
-    private Long seller_id; 
-    private String first_name; 
-    private String last_name; 
+    private Long sellerId;
+    private String firstName;
+    private String lastName;
     private int age; 
     private String email;
 
     public Seller(){}
 
-    public Seller(String first_name, String last_name, int age, String email) {
-        this.first_name = first_name;
-        this.last_name = last_name; 
+    public Seller(String firstName, String lastName, int age, String email) {
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.age = age; 
         this.email = email; 
     }
 
-    public void setSellerId(Long seller_id){
-        this.seller_id = seller_id; 
+    public void setSellerId(Long sellerId){
+        this.sellerId = sellerId;
     }
 
     public Long getSellerId(){
-        return this.seller_id; 
+        return this.sellerId;
     }
 
-    public void setFirstName(String first_name){
-        this.first_name = first_name;
+    public void setFirstName(String firstName){
+        this.firstName = firstName;
     }
 
     public String getFirstName() {
-        return this.first_name; 
+        return this.firstName;
     }
 
-    public void setLastName(String last_name){
-        this.last_name = last_name; 
+    public void setLastName(String lastName){
+        this.lastName = lastName;
     }
 
     public String getLastName(){
-        return this.last_name;
+        return this.lastName;
     }
 
     public void setAge(int age){

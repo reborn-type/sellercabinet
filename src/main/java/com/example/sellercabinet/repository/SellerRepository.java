@@ -34,9 +34,9 @@ public class SellerRepository {
         return jdbcTemplate.query("SELECT * FROM sellers;", ROW_MAPPER);
     }
 
-    public Optional<Seller> getById(Long seller_id){
+    public Optional<Seller> getById(Long sellerId){
         List <Seller> list = jdbcTemplate.query(
-            "SELECT * FROM sellers WHERE seller_id = ?;", ROW_MAPPER, seller_id
+            "SELECT * FROM sellers WHERE seller_id = ?;", ROW_MAPPER, sellerId
         );
         if (list.isEmpty()){
             return Optional.empty();
@@ -45,34 +45,39 @@ public class SellerRepository {
         }
     };
 
-    public Seller create(String first_name, String last_name, int age, String email){
+    public Seller create(String firstName, String lastName, int age, String email){
         KeyHolder kh = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(
                 "INSERT INTO sellers (first_name, last_name, age, email) VALUES (?,?,?,?);",
                 new String[]{"seller_id"}
             );
-            ps.setString(1, first_name);
-            ps.setString(2, last_name);
+            ps.setString(1, firstName);
+            ps.setString(2, lastName);
             ps.setInt(3, age);
             ps.setString(4,email);
             return ps; 
         }, kh);
-        Long seller_id = kh.getKey().longValue();
-        return getById(seller_id).orElseThrow();
+        Long sellerId = kh.getKey().longValue();
+        return getById(sellerId).orElseThrow();
     }
 
-    public void update(Long seller_id, String first_name, String last_name, int age, String email){
+    public Long getSellerSales(Long sellerId){
+        String sql = "SELECT COALESCE(SUM(count_of_sales), 0) FROM products WHERE seller_id = ?;";
+        return jdbcTemplate.queryForObject(sql, Long.class, sellerId);
+    }
+
+    public void update(Long sellerId, String firstName, String lastName, int age, String email){
         jdbcTemplate.update(
             "UPDATE sellers SET first_name = ?, last_name = ?, age = ?, email = ? WHERE seller_id = ?;",
-            first_name, last_name, age, email, seller_id
+            firstName, lastName, age, email, sellerId
         );
     }
 
-    public void deleteById (Long seller_id){
+    public void deleteById (Long sellerId){
         jdbcTemplate.update(
             "DELETE FROM sellers WHERE seller_id = ?;",
-            seller_id
+            sellerId
         );
     }
     

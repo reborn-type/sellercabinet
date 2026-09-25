@@ -35,92 +35,113 @@ public class SellerController {
         return sellerService.getAllSellers();
     }
 
-    @GetMapping("/{seller_id}") 
+    @GetMapping("/products")
+    public List<Product> getProducts(){return productService.getAllProducts();}
+
+    @GetMapping("/{sellerId}")
     public ResponseEntity<Seller> getSellerById(
-        @PathVariable Long seller_id 
+        @PathVariable Long sellerId
     ){
-        return ResponseEntity.ok(sellerService.getSellerById(seller_id));
+        return ResponseEntity.ok(sellerService.getSellerById(sellerId));
     }
 
-
-    @GetMapping("/{seller_id}/products")
-    public ResponseEntity<List<Product>> GetProductsBySellerId(@PathVariable Long seller_id)
+    @GetMapping("/{sellerId}/products")
+    public ResponseEntity<List<Product>> GetProductsBySellerId(@PathVariable Long sellerId)
     {
-        List<Product> products = sellerService.getProductsBySellerId(seller_id);
+        List<Product> products = sellerService.getProductsBySellerId(sellerId);
         return ResponseEntity.ok(products); 
+    }
+
+    @GetMapping("/{sellerId}/products/sales")
+    public ResponseEntity<Long> GetSellerSales(@PathVariable Long sellerId)
+    {
+        return ResponseEntity.ok(sellerService.getSalesFromSeller(sellerId));
     }
 
     @PostMapping
     public ResponseEntity<Seller> createSeller(@RequestBody CreateSellerRequest req){
-        Seller created = sellerService.createSeller(req.first_name(), req.last_name(), req.age(), req.email());
+        Seller created = sellerService.createSeller(req.firstName(), req.lastName(), req.age(), req.email());
         URI location = URI.create("/api/sellers/" + created.getSellerId());
         return ResponseEntity.created(location).body(created); 
     }
 
-    @PostMapping("/{seller_id}/products")
+    @PostMapping("/{sellerId}/products")
     public ResponseEntity <Product> createProductForSeller(
-        @PathVariable Long seller_id, 
+        @PathVariable Long sellerId,
         @RequestBody CreateProductRequest req
     ) {
         Product created = productService.createProduct(
-                seller_id,
+                sellerId,
                 req.name(),
                 req.price(),
                 req.count(),
-                req.count_of_sales(),
-                req.average_estimation()
+                req.countOfSales(),
+                req.averageEstimation()
         );
-        URI location = URI.create("/api/sellers/" + seller_id + "/products/" + created.getProductId());
+        URI location = URI.create("/api/sellers/" + sellerId + "/products/" + created.getProductId());
         return ResponseEntity.created(location).body(created);
     } 
 
-    @GetMapping("/{seller_id}/product/{product_id}")
+    @GetMapping("/products/sales")
+    public ResponseEntity<Long> getAllProductSales(){
+        return ResponseEntity.ok(productService.getTotalProductSales());
+    }
+
+    @GetMapping("/{sellerId}/product/{productId}")
     public ResponseEntity<Product> getProductOfSeller(
-        @PathVariable Long seller_id,
-        @PathVariable Long product_id 
+        @PathVariable Long sellerId,
+        @PathVariable Long productId
     ) {
-        Product product = productService.getProductBySellerAndProductId(seller_id, product_id);
+        Product product = productService.getProductBySellerAndProductId(sellerId, productId);
         return ResponseEntity.ok(product);
     }
     
-    @PutMapping("/{seller_id}/product/{product_id}")
+    @PutMapping("/{sellerId}/product/{productId}")
     public ResponseEntity<Void> updateProductOfSeller(
-        @PathVariable Long seller_id,
-        @PathVariable Long product_id,
+        @PathVariable Long sellerId,
+        @PathVariable Long productId,
         @RequestBody UpdateProductRequest req
     ) {
-        productService.updateProduct(product_id, seller_id, req.name(), req.price(), 
-        req.count(), req.count_of_sales(), req.average_estimation());
+        productService.updateProduct(productId, sellerId, req.name(), req.price(),
+        req.count(), req.countOfSales(), req.averageEstimation());
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{seller_id}") 
+    @PutMapping("/{sellerId}")
     public ResponseEntity<Void> updateSellerById(
-        @PathVariable Long seller_id,
+        @PathVariable Long sellerId,
         @RequestBody UpdateSellerRequest req
     ) {
-        sellerService.updateSeller(seller_id, req.first_name(), req.last_name(), req.age(), req.email());
+        sellerService.updateSeller(sellerId, req.firstName(), req.lastName(), req.age(), req.email());
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{seller_id}")
-    public ResponseEntity<Void> deleteSellerById(@PathVariable Long seller_id)
+    @DeleteMapping("/{sellerId}")
+    public ResponseEntity<Void> deleteSellerById(@PathVariable Long sellerId)
     {
-        sellerService.deleteSeller(seller_id);
+        sellerService.deleteSeller(sellerId);
         return ResponseEntity.noContent().build(); 
     }
 
-    @DeleteMapping("/{seller_id}/product/{product_id}")
+    @DeleteMapping("/{sellerId}/product/{productId}")
     public ResponseEntity<Void> deleteProductOfSeller(
-        @PathVariable Long seller_id, 
-        @PathVariable Long product_id 
+        @PathVariable Long sellerId,
+        @PathVariable Long productId
     ) {
-        productService.deleteProduct(seller_id, product_id);
+        productService.deleteProduct(sellerId, productId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/product/{productId}")
+    public ResponseEntity<Void> deleteProductById(
+            @PathVariable Long productId
+    ){
+        productService.deleteByProductId(productId);
         return ResponseEntity.noContent().build();
     }
 }
 
-record CreateSellerRequest(String first_name, String last_name, int age, String email) {} 
-record UpdateSellerRequest(String first_name, String last_name, int age, String email) {}
-record UpdateProductRequest(String name, Double price, Integer count, Integer count_of_sales, Double average_estimation) {}
-record CreateProductRequest(String name, Double price, Integer count, Integer count_of_sales, Double average_estimation) {}
+record CreateSellerRequest(String firstName, String lastName, int age, String email) {}
+record UpdateSellerRequest(String firstName, String lastName, int age, String email) {}
+record UpdateProductRequest(String name, Double price, Integer count, Integer countOfSales, Double averageEstimation) {}
+record CreateProductRequest(String name, Double price, Integer count, Integer countOfSales, Double averageEstimation) {}

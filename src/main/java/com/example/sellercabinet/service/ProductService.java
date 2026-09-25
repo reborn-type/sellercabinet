@@ -20,40 +20,45 @@ public class ProductService {
         this.repo = repo; 
     }
 
-    public List<Product> getAllProduct(){
+    public List<Product> getAllProducts(){
         return repo.getAll();
     }
 
+    public Long getTotalProductSales() {return repo.getTotalSales();}
+
     @Transactional
-    public Product getProductById(Long product_id){
-        return repo.getById(product_id)
+    public Product getProductById(Long productId){
+        return repo.getById(productId)
         .orElseThrow(() -> new EntityNotFoundException(
-            "Товар с таким id не найден" + product_id
+            "Товар с таким id не найден" + productId
         ));
     }
 
     @Transactional
-    public Product getProductBySellerAndProductId(Long seller_id, Long product_id){
-        return repo.findByProductAndSellerId(seller_id, product_id);
+    public Product getProductBySellerAndProductId(Long sellerId, Long productId){
+        return repo.findByProductAndSellerId(sellerId, productId);
     }
 
     @Transactional 
-    public List<Product> getProductsFromSeller(Long seller_id) {
-        return repo.findBySellerId(seller_id);
+    public List<Product> getProductsFromSeller(Long sellerId) {
+        return repo.findBySellerId(sellerId);
     }
 
     @Transactional 
-    public Product createProduct(Long seller_id, String name, double price, int count, int count_of_sales, double average_estimation){
-        return repo.create(seller_id, name, price, count, count_of_sales, average_estimation);
+    public Product createProduct(Long sellerId, String name, double price, int count, int countOfSales, double averageEstimation){
+        return repo.create(sellerId, name, price, count, countOfSales, averageEstimation);
     }
 
     @Transactional 
-    public void updateProduct(Long product_id, Long seller_id, String name, double price, int count, int count_of_sales, double average_estimation){
-        repo.update(product_id, seller_id, name, price, count, count_of_sales, average_estimation);
+    public void updateProduct(Long productId, Long sellerId, String name, double price, int count, int countOfSales, double averageEstimation){
+        repo.update(productId, sellerId, name, price, count, countOfSales, averageEstimation);
     }
 
     @Transactional
-    public void deleteProduct(Long seller_id, Long product_id){
-        repo.deleteById(seller_id, product_id);
+    public void deleteProduct(Long sellerId, Long productId){
+        repo.deleteById(sellerId, productId);
     }
+
+    @Transactional
+    public void deleteByProductId(Long productId) {repo.deleteByProductId(productId);}
 }

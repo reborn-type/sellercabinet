@@ -28,30 +28,35 @@ public class SellerService {
     }
 
     @Transactional 
-    public Seller getSellerById (Long seller_id) {
-        return repo.getById(seller_id)
+    public Seller getSellerById (Long sellerId) {
+        return repo.getById(sellerId)
         .orElseThrow(() -> new EntityNotFoundException(
-            "Продавец не найден с таким id: " + seller_id
+            "Продавец не найден с таким id: " + sellerId
         )); 
     }
 
     @Transactional
-    public List<Product> getProductsBySellerId(Long seller_id){
-        return productRepository.findBySellerId(seller_id);
+    public List<Product> getProductsBySellerId(Long sellerId){
+        return productRepository.findBySellerId(sellerId);
     }
 
     @Transactional 
-    public Seller createSeller(String first_name, String last_name, int age, String email){
-        return repo.create(first_name, last_name, age, email);
+    public Seller createSeller(String firstName, String lastName, int age, String email){
+        return repo.create(firstName, lastName, age, email);
     }
 
     @Transactional 
-    public void updateSeller(Long id, String first_name, String last_name, int age, String email){
-        repo.update(id, first_name, last_name, age, email);
+    public void updateSeller(Long sellerId, String firstName, String lastName, int age, String email){
+        repo.update(sellerId, firstName, lastName, age, email);
     }
 
     @Transactional 
-    public void deleteSeller(Long id){
-        repo.deleteById(id);
+    public void deleteSeller(Long sellerId){
+        repo.deleteById(sellerId);
+    }
+
+    @Transactional
+    public Long getSalesFromSeller(Long sellerId){
+        return repo.getSellerSales(sellerId);
     }
 }

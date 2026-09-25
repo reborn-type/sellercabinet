@@ -1,39 +1,39 @@
 package com.example.sellercabinet.entities;
 
 public class Product {
-    private Long product_id; 
-    private Long seller_id;
+    private Long productId;
+    private Long sellerId;
     private String name; 
     private Double price; 
     private Integer count; 
-    private Integer count_of_sales; 
-    private Double average_estimation;  
+    private Integer countOfSales;
+    private Double averageEstimation;
 
     public Product() {}
 
-    public Product(Long seller_id, String name, double price, int count, int count_of_sales, double average_estimation) {
-        this.seller_id = seller_id; 
+    public Product(Long sellerId, String name, double price, int count, int countOfSales, double averageEstimation) {
+        this.sellerId = sellerId;
         this.name = name; 
         this.price = price; 
         this.count = count; 
-        this.count_of_sales = count_of_sales; 
-        this.average_estimation = average_estimation; 
+        this.countOfSales = countOfSales;
+        this.averageEstimation = averageEstimation;
     }
 
     public void setProductId(Long product_id){
-        this.product_id = product_id; 
+        this.productId = product_id;
     }
 
     public Long getProductId(){
-        return this.product_id; 
+        return this.productId;
     }
 
-    public void setSellerId(Long seller_id){
-        this.seller_id = seller_id; 
+    public void setSellerId(Long sellerId){
+        this.sellerId = sellerId;
     }
 
     public Long getSellerId(){
-        return this.seller_id;
+        return this.sellerId;
     }
 
     public void setName(String name){
@@ -60,19 +60,19 @@ public class Product {
         return this.count; 
     }
 
-    public void setCountOfSales(int count_of_sales){
-        this.count_of_sales = count_of_sales; 
+    public void setCountOfSales(int countOfSales){
+        this.countOfSales = countOfSales;
     }
     
     public int getCountOfSales(){
-        return this.count_of_sales;
+        return this.countOfSales;
     }
 
-    public void setAverageEstimation(double average_estimation){
-        this.average_estimation = average_estimation; 
+    public void setAverageEstimation(double averageEstimation){
+        this.averageEstimation = averageEstimation;
     }
 
     public double getAverageEstimation(){
-        return this.average_estimation; 
+        return this.averageEstimation;
     }
 }
