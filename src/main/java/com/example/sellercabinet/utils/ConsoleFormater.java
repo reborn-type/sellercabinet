@@ -96,6 +96,42 @@ public class ConsoleFormater {
         }
     }
 
+    public String readNameString(
+            Scanner scanner,
+            String message
+    ) {
+        while(true) {
+            System.out.print(message);
+
+            String value = scanner.nextLine()
+                    .trim();
+
+            if (value.isBlank()) {
+                System.out.println(
+                        "Поле не может быть пустым."
+                );
+                continue;
+            }
+
+            if (value.length() < 2 || value.length() > 50) {
+                System.out.println("Длина должна быть от 2 до 50 символов.");
+                continue;
+            }
+
+            if (!value.matches("^[\\p{L}]+(?:[ -][\\p{L}]+)*$")) {
+                System.out.println("Используйте только буквы и дефис.");
+                continue;
+            }
+
+            if(value.contains(" ")){
+                System.out.println("Поле не должно содержать пробелы.");
+                continue;
+            }
+
+            return value;
+        }
+    }
+
     public String readEmail(
             Scanner scanner
     ) {
@@ -106,9 +142,22 @@ public class ConsoleFormater {
                     .trim();
 
             if (email.isBlank()) {
-                System.out.println(
-                        "Email не может быть пустым."
-                );
+                System.out.println("Email не может быть пустым.");
+                continue;
+            }
+
+            if (email.length() > 50 || email.length() < 5) {
+                System.out.println("Длина email не может быть больше 50 символов или меньше 5 символов.");
+                continue;
+            }
+
+            if(email.contains(" ")){
+                System.out.println("В почте не может быть пробелов");
+                continue;
+            }
+
+            if(!email.contains("@")){
+                System.out.println("Не указан домен почты.");
                 continue;
             }
 

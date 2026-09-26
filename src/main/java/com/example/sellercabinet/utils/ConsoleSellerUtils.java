@@ -63,9 +63,9 @@ public class ConsoleSellerUtils {
                 "\n--- Создание пользователя ---"
         );
 
-        String firstName = consoleFormater.readRequiredString(scanner, "Имя: ");
+        String firstName = consoleFormater.readNameString(scanner, "Имя: ");
 
-        String lastName =  consoleFormater.readRequiredString(scanner, "Фамилия: ");
+        String lastName =  consoleFormater.readNameString(scanner, "Фамилия: ");
 
         Integer age = consoleFormater.readAge(scanner);
 
@@ -145,7 +145,7 @@ public class ConsoleSellerUtils {
 
     public void getAllSellerSales(Long sellerId, boolean logsNeed) throws Exception{
 
-        String url = "http://localhost:8080/api/sellers/"+ sellerId + "products/sales";
+        String url = "http://localhost:8080/api/sellers/"+ sellerId + "/products/sales";
         HttpResponse<String> response = ConsoleHttpClient.sendRequest(
                 "GET",
                 url,
@@ -153,7 +153,7 @@ public class ConsoleSellerUtils {
                 logsNeed
         );
         System.out.println("\n--- У продавца "+sellerId + " ---");
-        System.out.println("Общее количество продаж: " + response);
+        System.out.println("Общее количество продаж: " + response.body());
 
     }
 

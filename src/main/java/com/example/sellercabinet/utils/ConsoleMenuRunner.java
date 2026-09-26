@@ -70,7 +70,7 @@ public class ConsoleMenuRunner implements CommandLineRunner {
             }
 
             case("login") -> {
-                System.out.println("Введите ID пользователя или admin.");
+                System.out.println("Введите ID пользователя.");
                 String value = scanner.nextLine().trim();
                 try {
                     Long sellerId = Long.parseLong(value);
