@@ -48,7 +48,8 @@
   * Чтобы скопировать `.env.example` можно воспользоваться командой `cp .env.example .env`
 * Запустить `docker compose up --build`
 * Запустить приложение `sellercabinet.exe`
-В случае если Вы собираетесь использовать консольную версию сервиса, после `docker compose up --build` используйте команду `docker compose run --rm --service-ports app`
+
+В случае если Вы собираетесь использовать **консольную версию** сервиса, после `docker compose up --build` используйте команду `docker compose run --rm --service-ports app`
 
 ## Документация разработки
 * [Ссылка на backend readme]()
