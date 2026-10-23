@@ -36,3 +36,11 @@ build/
 .env
 
 secrets/
+
+# Local build and tool caches
+.m2-local/
+.mvn/wrapper/dists/
+
+# Runtime files
+*.log
+docker-compose.override.yml
