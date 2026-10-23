@@ -1,0 +1,10 @@
+package com.example.authservice.dto;
+
+public record RegisterRequest (
+        String firstName,
+        String lastName,
+        int age,
+        String email,
+        String password,
+        String role
+) {}

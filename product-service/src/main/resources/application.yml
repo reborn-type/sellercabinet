@@ -1,0 +1,18 @@
+server:
+  port: 8082
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/products
+    username: user
+    password: user
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: product-service
+      properties:
+        spring.json.trusted.packages: "com.example.events"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:keys/public.pem
