@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: auth
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: user
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
     ports:
       - "5435:5432"
     volumes:
@@ -19,7 +19,7 @@ services:
     environment:
       POSTGRES_DB: users
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: user
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_DB: products
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: user
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
     ports:
       - "5434:5432"
     volumes:
@@ -43,7 +43,7 @@ services:
     environment:
       POSTGRES_DB: analytics
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: user
+      POSTGRES_PASSWORD: ${ANALYTICS_DB_PASSWORD}
     ports:
       - "5436:5432"
     volumes:

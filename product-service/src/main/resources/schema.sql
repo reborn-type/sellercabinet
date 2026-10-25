@@ -1,4 +1,4 @@
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     product_id BIGSERIAL PRIMARY KEY,
     seller_id BIGINT NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -8,9 +8,9 @@ CREATE TABLE products (
     average_estimation DOUBLE PRECISION NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_products_seller ON products(seller_id);
+CREATE INDEX IF NOT EXISTS idx_products_seller ON products(seller_id);
 
-CREATE TABLE sellers_projection (
+CREATE TABLE IF NOT EXISTS sellers_projection (
     seller_id BIGINT PRIMARY KEY,
     first_name VARCHAR(255),
     last_name VARCHAR(255),
@@ -18,7 +18,7 @@ CREATE TABLE sellers_projection (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE processed_events (
+CREATE TABLE IF NOT EXISTS processed_events (
     event_id UUID PRIMARY KEY,
     processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

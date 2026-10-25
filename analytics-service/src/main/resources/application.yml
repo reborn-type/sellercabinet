@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5436/analytics
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5436/analytics}
     username: user
     password: user
   sql:

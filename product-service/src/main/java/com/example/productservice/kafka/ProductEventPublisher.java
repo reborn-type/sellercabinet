@@ -17,7 +17,7 @@ public class ProductEventPublisher {
     }
 
     public void publishCreated(Product p){
-        kafka.send("Product.created", String.valueOf(p.getSellerId()),
+        kafka.send("product.created", String.valueOf(p.getSellerId()),
                 new ProductCreatedEvent(p.getProductId(), p.getSellerId(), p.getName(),
                         p.getPrice(), Instant.now()));
     }
