@@ -10,6 +10,8 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+
 import com.example.productservice.entities.Product;
 
 @Repository
@@ -25,10 +27,10 @@ public class ProductRepository {
         p.setProductId(rs.getLong("product_id"));
         p.setSellerId(rs.getLong("seller_id"));
         p.setName(rs.getString("name"));
-        p.setPrice(rs.getDouble("price"));
+        p.setPrice(rs.getBigDecimal("price"));
         p.setCount(rs.getInt("count"));
         p.setCountOfSales(rs.getInt("count_of_sales"));
-        p.setAverageEstimation(rs.getDouble("average_estimation"));
+        p.setAverageEstimation(rs.getBigDecimal("average_estimation"));
         return p;
     };
 
@@ -59,8 +61,8 @@ public class ProductRepository {
                 "SELECT COALESCE(SUM(count_of_sales), 0) FROM products;", Long.class);
     }
 
-    public Product create(Long sellerId, String name, double price, int count,
-                          int countOfSales, double averageEstimation) {
+    public Product create(Long sellerId, String name, BigDecimal price, Integer count,
+                          Integer countOfSales, BigDecimal averageEstimation) {
         KeyHolder kh = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(
@@ -69,18 +71,18 @@ public class ProductRepository {
                     new String[]{"product_id"});
             ps.setLong(1, sellerId);
             ps.setString(2, name);
-            ps.setDouble(3, price);
+            ps.setBigDecimal(3, price);
             ps.setInt(4, count);
             ps.setInt(5, countOfSales);
-            ps.setDouble(6, averageEstimation);
+            ps.setBigDecimal(6, averageEstimation);
             return ps;
         }, kh);
         Long productId = kh.getKey().longValue();
         return getById(productId).orElseThrow();
     }
 
-    public void update(Long productId, Long sellerId, String name, Double price,
-                       int count, int countOfSales, double averageEstimation) {
+    public void update(Long productId, Long sellerId, String name, BigDecimal price,
+                       Integer count, Integer countOfSales, BigDecimal averageEstimation) {
         jdbcTemplate.update(
                 "UPDATE products SET name=?, price=?, count=?, count_of_sales=?, average_estimation=? " +
                         "WHERE product_id = ? AND seller_id = ?;",

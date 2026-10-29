@@ -12,6 +12,7 @@ import com.example.productservice.repository.ProductRepository;
 import com.example.productservice.repository.SellerProjectionRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.math.BigDecimal;
 
 @Service
 @Transactional(readOnly = true)
@@ -51,8 +52,8 @@ public class ProductService {
     }
 
     @Transactional
-    public Product createProduct(Long sellerId, String name, double price, int count,
-                                 int countOfSales, double averageEstimation) {
+    public Product createProduct(Long sellerId, String name, BigDecimal price, Integer count,
+                                 Integer countOfSales, BigDecimal averageEstimation) {
         if (!sellers.exists(sellerId)) {
             throw new EntityNotFoundException("Продавец не найден или заблокирован: " + sellerId);
         }
@@ -64,8 +65,8 @@ public class ProductService {
 
     @Transactional
     public void updateProduct(Long productId, Long callerId, boolean isAdmin,
-                              String name, double price, int count,
-                              int countOfSales, double averageEstimation) {
+                              String name, BigDecimal price, Integer count,
+                              Integer countOfSales, BigDecimal averageEstimation) {
         Product existing = getProductById(productId);
 
         if (!isAdmin && !existing.getSellerId().equals(callerId)) {

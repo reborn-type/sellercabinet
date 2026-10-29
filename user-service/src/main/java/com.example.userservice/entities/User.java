@@ -4,7 +4,7 @@ public class User {
     private Long userId;
     private String firstName;
     private String lastName;
-    private int age;
+    private Integer age;
     private String email;
     private String role;
     private String status;
@@ -15,8 +15,8 @@ public class User {
     public void setFirstName(String firstName) { this.firstName = firstName; }
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
-    public int getAge() { return age; }
-    public void setAge(int age) { this.age = age; }
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public String getRole() { return role; }

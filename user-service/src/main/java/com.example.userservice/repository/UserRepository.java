@@ -42,7 +42,7 @@ public class UserRepository {
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
-    public User create(String firstName, String lastName, int age, String email,
+    public User create(String firstName, String lastName, Integer age, String email,
                        String role, String status) {
         KeyHolder kh = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
@@ -62,7 +62,7 @@ public class UserRepository {
         return getById(userId).orElseThrow();
     }
 
-    public void update(Long userId, String firstName, String lastName, int age, String email) {
+    public void update(Long userId, String firstName, String lastName, Integer age, String email) {
         jdbcTemplate.update(
                 "UPDATE users SET first_name = ?, last_name = ?, age = ?, email = ? WHERE user_id = ?;",
                 firstName, lastName, age, email, userId);

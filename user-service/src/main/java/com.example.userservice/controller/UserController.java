@@ -10,7 +10,14 @@ import org.springframework.web.bind.annotation.*;
 import com.example.userservice.entities.User;
 import com.example.userservice.service.UserService;
 
+import com.example.userservice.dto.*;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
+
 @RestController
+@Validated
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
@@ -26,34 +33,33 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<User> getById(@PathVariable Long userId) {
+    public ResponseEntity<User> getById(@PathVariable @Positive  Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> create(@RequestBody CreateUserRequest req){
+    public ResponseEntity<User> create(
+           @Valid @RequestBody CreateUserRequest req
+    ){
         User created = userService.createUser(req.firstName(), req.lastName(),
-                req.age(), req.email(), req.role(), "ACTIVE");
+                req.age(), req.email(), "ACTIVE");
         return ResponseEntity.created(URI.create("/api/users/" + created.getUserId())).body(created);
     }
 
     @PutMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.subject")
-    public ResponseEntity<Void> update(@PathVariable Long userId,
-                                       @RequestBody UpdateUserRequest req) {
+    public ResponseEntity<Void> update(@PathVariable @Positive Long userId,
+                                       @Valid @RequestBody UpdateUserRequest req) {
         userService.updateUser(userId, req.firstName(), req.lastName(), req.age(), req.email());
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long userId) {
+    public ResponseEntity<Void> delete(@PathVariable @Positive Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
 }
-
-record CreateUserRequest(String firstName, String lastName, int age, String email, String role) {}
-record UpdateUserRequest(String firstName, String lastName, int age, String email) {}

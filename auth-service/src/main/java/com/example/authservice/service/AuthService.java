@@ -14,6 +14,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import com.example.authservice.model.UserRole;
+import com.example.authservice.exception.*;
+
 @Service
 public class AuthService {
 
@@ -38,20 +41,22 @@ public class AuthService {
     @Transactional
     public TokenPair register(RegisterRequest req) {
         if (credentials.existsByEmail(req.email())) {
-            throw new IllegalStateException("Email уже занят");
+            throw new EmailAlreadyExistsException();
         }
+
+        String role = UserRole.SELLER.name();
 
         Long userId = credentials.save(
                 req.email(),
                 passwordEncoder.encode(req.password()),
-                req.role()
+                role
         );
 
         eventPublisher.publishRegistrationRequested(
-                userId, req.firstName(), req.lastName(), req.age(), req.email(), req.role()
+                userId, req.firstName(), req.lastName(), req.age(), req.email(), role
         );
 
-        String access = tokenService.generateAccessToken(userId, req.role());
+        String access = tokenService.generateAccessToken(userId, role);
         String refresh = createRefreshToken(userId);
         return new TokenPair(access, refresh);
     }
@@ -59,10 +64,10 @@ public class AuthService {
     @Transactional
     public TokenPair login(LoginRequest req) {
         var cred = credentials.findByEmail(req.email())
-                .orElseThrow(() -> new IllegalArgumentException("Неверный email или пароль"));
+                .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(req.password(), cred.passwordHash())) {
-            throw new IllegalArgumentException("Неверный email или пароль");
+            throw new InvalidCredentialsException();
         }
 
         String access = tokenService.generateAccessToken(cred.userId(), cred.role());

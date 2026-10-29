@@ -1,17 +1,20 @@
 package com.example.productservice.entities;
+import com.fasterxml.jackson.databind.BeanProperty;
+
+import java.math.BigDecimal;
 
 public class Product {
     private Long productId;
     private Long sellerId;
     private String name;
-    private Double price;
+    private BigDecimal price;
     private Integer count;
     private Integer countOfSales;
-    private Double averageEstimation;
+    private BigDecimal averageEstimation;
 
     public Product() {}
 
-    public Product(Long sellerId, String name, double price, int count, int countOfSales, double averageEstimation) {
+    public Product(Long sellerId, String name, BigDecimal price, Integer count, Integer countOfSales, BigDecimal averageEstimation) {
         this.sellerId = sellerId;
         this.name = name;
         this.price = price;
@@ -45,11 +48,11 @@ public class Product {
         this.name = name;
     }
 
-    public Double getPrice(){
+    public BigDecimal getPrice(){
         return this.price;
     }
 
-    public void setPrice(Double price){
+    public void setPrice(BigDecimal price){
         this.price = price;
     }
 
@@ -69,11 +72,11 @@ public class Product {
         this.countOfSales = countOfSales;
     }
 
-    public Double getAverageEstimation(){
+    public BigDecimal getAverageEstimation(){
         return this.averageEstimation;
     }
 
-    public void setAverageEstimation(Double averageEstimation){
+    public void setAverageEstimation(BigDecimal averageEstimation){
         this.averageEstimation = averageEstimation;
     }
 

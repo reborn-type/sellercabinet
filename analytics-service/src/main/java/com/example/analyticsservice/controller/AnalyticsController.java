@@ -10,7 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
+
 @RestController
+@Validated
 @RequestMapping("/api/analytics")
 public class AnalyticsController {
 
@@ -26,7 +30,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/sellers/{sellerId}")
-    public ResponseEntity<SellerStats> getSellerStats(@PathVariable Long sellerId) {
+    public ResponseEntity<SellerStats> getSellerStats(@PathVariable @Positive Long sellerId) {
         SellerStats stats = repository.getStatsBySellerId(sellerId);
         if (stats == null) {
             return ResponseEntity.notFound().build();

@@ -32,7 +32,7 @@ public class UserService {
     }
 
     @Transactional
-    public User createUser(String firstName, String lastName, int age, String email,
+    public User createUser(String firstName, String lastName, Integer age, String email,
                            String role, String status) {
         User created = repo.create(firstName, lastName, age, email, role, status);
         publisher.publishCreated(created);
@@ -40,7 +40,7 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUser(Long userId, String firstName, String lastName, int age, String email) {
+    public void updateUser(Long userId, String firstName, String lastName, Integer age, String email) {
         repo.update(userId, firstName, lastName, age, email);
         publisher.publishUpdated(getUserById(userId));
     }
