@@ -43,7 +43,7 @@ public class UserController {
            @Valid @RequestBody CreateUserRequest req
     ){
         User created = userService.createUser(req.firstName(), req.lastName(),
-                req.age(), req.email(), "ACTIVE");
+                req.age(), req.email(), "SELLER", "ACTIVE");
         return ResponseEntity.created(URI.create("/api/users/" + created.getUserId())).body(created);
     }
 

@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     age INT NOT NULL,
     email VARCHAR(200) NOT NULL UNIQUE,
     role VARCHAR(32) NOT NULL DEFAULT 'SELLER',
-    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE'
+    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
 
     CONSTRAINT uk_user_email UNIQUE (email),
     CONSTRAINT chk_user_first_name CHECK(BTRIM(first_name) <> ''),

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
-    expires_at TIMESTAMP NOT NULL
+    expires_at TIMESTAMP NOT NULL,
 
     CONSTRAINT uk_refresh_tokens_token UNIQUE (token),
     CONSTRAINT chk_refresh_token_not_blank CHECK (BTRIM(token) <> ''),
