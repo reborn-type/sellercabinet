@@ -19,13 +19,13 @@ public class ProductEventPublisher {
     public void publishCreated(Product p){
         kafka.send("product.created", String.valueOf(p.getSellerId()),
                 new ProductCreatedEvent(p.getProductId(), p.getSellerId(), p.getName(),
-                        p.getPrice(), Instant.now()));
+                        p.getPrice(), p.getCount(), p.getCountOfSales(), p.getAverageEstimation(), Instant.now()));
     }
 
     public void publishUpdated(Product p) {
         kafka.send("product.updated", String.valueOf(p.getSellerId()),
                 new ProductCreatedEvent(p.getProductId(), p.getSellerId(), p.getName(),
-                        p.getPrice(), Instant.now()));
+                        p.getPrice(), p.getCount(), p.getCountOfSales(), p.getAverageEstimation(), Instant.now()));
     }
 
     public void publishDeleted(Long productId, Long sellerId) {

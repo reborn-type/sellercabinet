@@ -13,16 +13,20 @@ CREATE TABLE IF NOT EXISTS auth_credentials (
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    token VARCHAR(255) NOT NULL UNIQUE,
+    token_hash VARCHAR(64) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
 
-    CONSTRAINT uk_refresh_tokens_token UNIQUE (token),
-    CONSTRAINT chk_refresh_token_not_blank CHECK (BTRIM(token) <> ''),
+    CONSTRAINT uk_refresh_tokens_token_hash
+        UNIQUE (token_hash),
+
+    CONSTRAINT chk_refresh_token_hash_not_blank
+        CHECK (BTRIM(token_hash) <> ''),
+
     CONSTRAINT fk_refresh_token_user
         FOREIGN KEY (user_id)
         REFERENCES auth_credentials(user_id)
         ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user
+    ON refresh_tokens(user_id);

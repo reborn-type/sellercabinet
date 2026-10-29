@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -20,26 +21,51 @@ public class AnalyticsRepository {
         s.setSellerId(rs.getLong("seller_id"));
         s.setTotalProducts(rs.getInt("total_products"));
         s.setTotalSales(rs.getLong("total_sales"));
+        s.setTotalStockValue(rs.getBigDecimal("total_stock_value"));
+        s.setAverageEstimation(rs.getBigDecimal("average_estimation"));
         s.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         return s;
     };
 
-    public void incrementProducts(Long sellerId) {
+    public void upsertProduct(Long productId, Long sellerId, BigDecimal price,
+                              Integer count, Integer countOfSales, BigDecimal averageEstimation) {
         jdbc.update("""
-            INSERT INTO seller_stats (seller_id, total_products) VALUES (?, 1)
-            ON CONFLICT (seller_id) DO UPDATE SET 
-                total_products = seller_stats.total_products + 1,
-                updated_at = NOW();
-            """, sellerId);
+            INSERT INTO analytics_products (product_id, seller_id, price, count, count_of_sales, average_estimation)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (product_id) DO UPDATE SET
+                price = EXCLUDED.price,
+                count = EXCLUDED.count,
+                count_of_sales = EXCLUDED.count_of_sales,
+                average_estimation = EXCLUDED.average_estimation;
+            """, productId, sellerId, price, count, countOfSales, averageEstimation);
+
+        recalculateSellerStats(sellerId);
     }
 
-    public void decrementProducts(Long sellerId) {
+    public void deleteProduct(Long productId, Long sellerId) {
+        jdbc.update("DELETE FROM analytics_products WHERE product_id = ?", productId);
+        recalculateSellerStats(sellerId);
+    }
+
+    private void recalculateSellerStats(Long sellerId) {
         jdbc.update("""
-            INSERT INTO seller_stats (seller_id, total_products) VALUES (?, 0)
-            ON CONFLICT (seller_id) DO UPDATE SET 
-                total_products = GREATEST(0, seller_stats.total_products - 1),
+            INSERT INTO seller_stats (seller_id, total_products, total_sales, total_stock_value, average_estimation, updated_at)
+            SELECT 
+                ?,
+                COUNT(*),
+                COALESCE(SUM(count_of_sales), 0),
+                COALESCE(SUM(price * count), 0),
+                COALESCE(AVG(average_estimation), 0),
+                NOW()
+            FROM analytics_products
+            WHERE seller_id = ?
+            ON CONFLICT (seller_id) DO UPDATE SET
+                total_products = EXCLUDED.total_products,
+                total_sales = EXCLUDED.total_sales,
+                total_stock_value = EXCLUDED.total_stock_value,
+                average_estimation = EXCLUDED.average_estimation,
                 updated_at = NOW();
-            """, sellerId);
+            """, sellerId, sellerId);
     }
 
     public List<SellerStats> getAllStats() {

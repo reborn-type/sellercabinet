@@ -8,34 +8,57 @@ import java.util.Optional;
 
 @Repository
 public class RefreshTokenRepository {
+
     private final JdbcTemplate jdbc;
 
     public RefreshTokenRepository(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
 
-    public record StoredRefresh(Long userId, Instant expiresAt) {}
+    public record StoredRefresh(
+            Long userId,
+            Instant expiresAt
+    ) {}
 
-    public void save(Long userId, String token, Instant expiresAt) {
+    public void save(
+            Long userId,
+            String tokenHash,
+            Instant expiresAt
+    ) {
         jdbc.update(
-                "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
-                userId, token, java.sql.Timestamp.from(expiresAt));
+                """
+                INSERT INTO refresh_tokens (
+                    user_id,
+                    token_hash,
+                    expires_at
+                )
+                VALUES (?, ?, ?)
+                """,
+                userId,
+                tokenHash,
+                java.sql.Timestamp.from(expiresAt)
+        );
     }
 
-    public Optional<StoredRefresh> findByToken(String token) {
+    public Optional<StoredRefresh> consumeByHash(String tokenHash) {
         return jdbc.query(
-                "SELECT user_id, expires_at FROM refresh_tokens WHERE token = ?",
-                (rs, i) -> new StoredRefresh(
-                        rs.getLong("user_id"),
-                        rs.getTimestamp("expires_at").toInstant()
-                ), token).stream().findFirst();
-    }
-
-    public void deleteByToken(String token) {
-        jdbc.update("DELETE FROM refresh_tokens WHERE token = ?", token);
+                """
+                DELETE FROM refresh_tokens
+                WHERE token_hash = ?
+                RETURNING user_id, expires_at
+                """,
+                (resultSet, rowNumber) -> new StoredRefresh(
+                        resultSet.getLong("user_id"),
+                        resultSet.getTimestamp("expires_at").toInstant()
+                ),
+                tokenHash
+        ).stream().findFirst();
     }
 
     public void deleteAllByUserId(Long userId) {
-        jdbc.update("DELETE FROM refresh_tokens WHERE user_id = ?", userId);
+        jdbc.update(
+                "DELETE FROM refresh_tokens WHERE user_id = ?",
+                userId
+        );
     }
 }

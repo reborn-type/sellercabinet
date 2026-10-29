@@ -19,12 +19,13 @@ public class TokenService {
 
     public String generateAccessToken(Long userId, String role) {
         Instant now = Instant.now();
+
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("roles", List.of(role))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(15, ChronoUnit.MINUTES)))
-                .signWith(privateKey)
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 }

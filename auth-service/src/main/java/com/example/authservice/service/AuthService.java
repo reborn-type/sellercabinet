@@ -17,6 +17,9 @@ import java.util.UUID;
 import com.example.authservice.model.UserRole;
 import com.example.authservice.exception.*;
 
+import java.security.SecureRandom;
+import java.util.Base64;
+
 @Service
 public class AuthService {
 
@@ -25,18 +28,93 @@ public class AuthService {
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
     private final AuthEventPublisher eventPublisher;
+    private final RefreshTokenHasher refreshTokenHasher;
+
 
     public AuthService(CredentialRepository credentials,
                        RefreshTokenRepository refreshTokens,
                        TokenService tokenService,
                        PasswordEncoder passwordEncoder,
-                       AuthEventPublisher eventPublisher) {
+                       AuthEventPublisher eventPublisher,
+                       RefreshTokenHasher refreshTokenHasher
+    ) {
         this.credentials = credentials;
         this.refreshTokens = refreshTokens;
         this.tokenService = tokenService;
         this.passwordEncoder = passwordEncoder;
         this.eventPublisher = eventPublisher;
+        this.refreshTokenHasher = refreshTokenHasher;
     }
+
+    private static final SecureRandom SECURE_RANDOM =
+            new SecureRandom();
+
+    private String createRefreshToken(Long userId) {
+        String rawToken = generateRawRefreshToken();
+        String tokenHash = refreshTokenHasher.hash(rawToken);
+
+        refreshTokens.save(
+                userId,
+                tokenHash,
+                Instant.now().plus(7, ChronoUnit.DAYS)
+        );
+
+        return rawToken;
+    }
+
+    private String generateRawRefreshToken() {
+        byte[] bytes = new byte[32];
+        SECURE_RANDOM.nextBytes(bytes);
+
+        return Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(bytes);
+    }
+
+    @Transactional(
+            noRollbackFor = InvalidRefreshTokenException.class
+    )
+    public TokenPair refresh(String oldRawRefreshToken) {
+        String oldTokenHash =
+                refreshTokenHasher.hash(oldRawRefreshToken);
+
+        var stored = refreshTokens.consumeByHash(oldTokenHash)
+                .orElseThrow(() ->
+                        new InvalidRefreshTokenException(
+                                "Недействительный refresh токен"
+                        )
+                );
+
+        if (stored.expiresAt().isBefore(Instant.now())) {
+            throw new InvalidRefreshTokenException(
+                    "Refresh токен истек"
+            );
+        }
+
+        var credential = credentials.findByUserId(stored.userId())
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "Пользователь не найден"
+                        )
+                );
+
+        String newAccessToken =
+                tokenService.generateAccessToken(
+                        credential.userId(),
+                        credential.role()
+                );
+
+        String newRefreshToken =
+                createRefreshToken(credential.userId());
+
+        return new TokenPair(
+                newAccessToken,
+                newRefreshToken
+        );
+    }
+
+
+
 
     @Transactional
     public TokenPair register(RegisterRequest req) {
@@ -75,29 +153,4 @@ public class AuthService {
         return new TokenPair(access, refresh);
     }
 
-    @Transactional
-    public TokenPair refresh(String oldRefreshToken) {
-        var stored = refreshTokens.findByToken(oldRefreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("Недействительный refresh token"));
-
-        if (stored.expiresAt().isBefore(Instant.now())) {
-            refreshTokens.deleteByToken(oldRefreshToken);
-            throw new IllegalArgumentException("Refresh token истек");
-        }
-
-        refreshTokens.deleteByToken(oldRefreshToken);
-
-        var cred = credentials.findByUserId(stored.userId())
-                .orElseThrow(() -> new IllegalStateException("Пользователь не найден"));
-
-        String newAccess = tokenService.generateAccessToken(cred.userId(), cred.role());
-        String newRefresh = createRefreshToken(cred.userId());
-        return new TokenPair(newAccess, newRefresh);
-    }
-
-    private String createRefreshToken(Long userId) {
-        String token = UUID.randomUUID().toString();
-        refreshTokens.save(userId, token, Instant.now().plus(7, ChronoUnit.DAYS));
-        return token;
-    }
 }

@@ -17,10 +17,10 @@ public class UserEventListener {
         this.products = products;
     }
 
-    @KafkaListener(topics = "user.created", groupId = "product-service")
+    @KafkaListener(topics = "user.registration.requested", groupId = "product-service")
     @Transactional
-    public void onUserCreated(UserCreatedEvent e){
-        projections.upsert(e.sellerId(), e.firstName(), e.lastName(), e.email());
+    public void onUserRegistrationRequested(UserRegistrationRequestedEvent e){
+        projections.upsert(e.userId(), e.firstName(), e.lastName(), e.email());
     }
 
     @KafkaListener(topics = "user.updated", groupId = "product-service")
@@ -35,5 +35,4 @@ public class UserEventListener {
         projections.delete(e.sellerId());
         products.deleteAllBySeller(e.sellerId());
     }
-
 }

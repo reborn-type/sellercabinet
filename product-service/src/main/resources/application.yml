@@ -16,17 +16,15 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.add.type.handler: true
-
+        spring.json.add.type.headers: true
     consumer:
       group-id: product-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.example.events"
-        key-serializer: org.apache.kafka.common.serialization.StringDeserializer
-        values-deserializer: org.springframework.kafka.support.serializer.JsonDeserialization
-        properties:
-          spring.json.trusted.packages: "com.example.events"
-          spring.json.use.type.handlers: true
+
+
   security:
     oauth2:
       resourceserver:

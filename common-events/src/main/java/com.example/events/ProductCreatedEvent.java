@@ -9,5 +9,8 @@ public record ProductCreatedEvent(
         Long sellerId,
         String name,
         BigDecimal price,
+        Integer count,
+        Integer countOfSales,
+        BigDecimal averageEstimation,
         Instant occurredAt
 ) {}

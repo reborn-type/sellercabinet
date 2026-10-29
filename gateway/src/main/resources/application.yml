@@ -21,8 +21,8 @@ spring:
           uri: http://product-service:8082
           predicates:
             - Path=/api/products/**
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          public-key-location: classpath:keys/public.pem
+
+        - id: analytics-service
+          uri: http://analytics-service:8083
+          predicates:
+            - Path=/api/analytics/**
