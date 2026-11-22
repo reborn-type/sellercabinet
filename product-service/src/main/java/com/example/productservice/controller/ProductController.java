@@ -9,9 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.productservice.entities.Product;
+import com.example.productservice.dto.ProductResponse;
 import com.example.productservice.service.ProductService;
-import java.math.BigDecimal;
 
 
 import com.example.productservice.dto.*;
@@ -31,23 +30,23 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAll() {
+    public List<ProductResponse> getAll() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{productId}")
-    public ResponseEntity<Product> getById(@PathVariable @Positive Long productId) {
+    public ResponseEntity<ProductResponse> getById(@PathVariable @Positive Long productId) {
         return ResponseEntity.ok(productService.getProductById(productId));
     }
 
-    @GetMapping("/by-seller/{sellerId}")
-    public ResponseEntity<List<Product>> bySeller(@PathVariable @Positive  Long sellerId) {
-        return ResponseEntity.ok(productService.getProductsBySeller(sellerId));
+    @GetMapping("/by-seller/{userId}")
+    public ResponseEntity<List<ProductResponse>> bySeller(@PathVariable @Positive  Long userId) {
+        return ResponseEntity.ok(productService.getProductsBySeller(userId));
     }
 
-    @GetMapping("/by-seller/{sellerId}/sales")
-    public ResponseEntity<Long> sellerSales(@PathVariable @Positive  Long sellerId) {
-        return ResponseEntity.ok(productService.getSellerSales(sellerId));
+    @GetMapping("/by-seller/{userId}/sales")
+    public ResponseEntity<Long> sellerSales(@PathVariable @Positive  Long userId) {
+        return ResponseEntity.ok(productService.getSellerSales(userId));
     }
 
     @GetMapping("/sales/total")
@@ -57,13 +56,13 @@ public class ProductController {
 
     @PostMapping
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<Product> create(
+    public ResponseEntity<ProductResponse> create(
             @Valid @RequestBody CreateProductRequest req,
             @AuthenticationPrincipal Jwt jwt) {
-        Long sellerId = Long.valueOf(jwt.getSubject());
-        Product created = productService.createProduct(sellerId, req.name(), req.price(),
+        Long userId = Long.valueOf(jwt.getSubject());
+        ProductResponse created = productService.createProduct(userId, req.name(), req.price(),
                 req.count(), req.countOfSales(), req.averageEstimation());
-        return ResponseEntity.created(URI.create("/api/products/" + created.getProductId()))
+        return ResponseEntity.created(URI.create("/api/products/" + created.productId()))
                 .body(created);
     }
 

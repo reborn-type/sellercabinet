@@ -2,6 +2,7 @@ package com.example.userservice.service;
 
 import java.util.List;
 
+import com.example.userservice.dto.UserResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,6 +11,8 @@ import com.example.userservice.kafka.UserEventPublisher;
 import com.example.userservice.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,32 +25,80 @@ public class UserService {
         this.publisher = publisher;
     }
 
-    public List<User> getAllUsers() {
-        return repo.getAll();
+    public List<UserResponse> getAllUsers() {
+        return repo.getALl();
     }
 
-    public User getUserById(Long userId) {
-        return repo.getById(userId)
+    public UserResponse getUserById(Long userId) {
+        return repo.findResponseById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден: " + userId));
     }
 
     @Transactional
-    public User createUser(String firstName, String lastName, Integer age, String email,
-                           String role, String status) {
-        User created = repo.create(firstName, lastName, age, email, role, status);
-        publisher.publishCreated(created);
-        return created;
+    public UserResponse createUser(String firstName, String lastName, Integer age, String email, String role){
+        String status = "ACTIVE";
+
+        User user = new User(
+                firstName,
+                lastName,
+                age,
+                email,
+                role,
+                status
+        );
+
+        User created = repo.save(user);
+
+        UserResponse response = getUserById(created.getUserId());
+
+        afterCommit(() -> publisher.publishCreated(created));
+
+        return response;
     }
 
-    @Transactional
-    public void updateUser(Long userId, String firstName, String lastName, Integer age, String email) {
-        repo.update(userId, firstName, lastName, age, email);
-        publisher.publishUpdated(getUserById(userId));
-    }
 
     @Transactional
-    public void deleteUser(Long userId) {
-        repo.deleteById(userId);
-        publisher.publishDeleted(userId);
+    public void updateUser(
+            Long userId,
+            String firstName,
+            String lastName,
+            Integer age,
+            String email
+    ) {
+        User user = findEntityById(userId);
+
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setAge(age);
+        user.setEmail(email);
+
+        afterCommit(() -> publisher.publishUpdated(user));
+    }
+
+
+    @Transactional
+    public void deleteUser(Long userId){
+        User user = findEntityById(userId);
+
+        repo.delete(user);
+
+        afterCommit(() -> publisher.publishDeleted(userId));
+    }
+
+
+    private User findEntityById(Long userId){
+        return repo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь с таким ID не найден: " + userId));
+    }
+
+    private void afterCommit(Runnable action){
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit(){
+                        action.run();
+                    }
+                }
+        );
     }
 }

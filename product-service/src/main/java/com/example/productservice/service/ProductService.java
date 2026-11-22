@@ -5,14 +5,18 @@ import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.example.productservice.entities.Product;
 import com.example.productservice.kafka.ProductEventPublisher;
 import com.example.productservice.repository.ProductRepository;
 import com.example.productservice.repository.SellerProjectionRepository;
-
+import com.example.productservice.dto.ProductResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
+
+
 
 @Service
 @Transactional(readOnly = true)
@@ -30,21 +34,21 @@ public class ProductService {
         this.publisher = publisher;
     }
 
-    public List<Product> getAllProducts() {
-        return repo.getAll();
+    public List<ProductResponse> getAllProducts() {
+        return repo.findAllResponses();
     }
 
-    public Product getProductById(Long productId) {
-        return repo.getById(productId)
+    public ProductResponse getProductById(Long productId) {
+        return repo.findResponseById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Товар не найден: " + productId));
     }
 
-    public List<Product> getProductsBySeller(Long sellerId) {
-        return repo.findBySellerId(sellerId);
+    public List<ProductResponse> getProductsBySeller(Long userId) {
+        return repo.findResponseBySellerId(userId);
     }
 
-    public Long getSellerSales(Long sellerId) {
-        return repo.getSellerSales(sellerId);
+    public Long getSellerSales(Long userId) {
+        return repo.getSellerSales(userId);
     }
 
     public Long getTotalSales() {
@@ -52,41 +56,102 @@ public class ProductService {
     }
 
     @Transactional
-    public Product createProduct(Long sellerId, String name, BigDecimal price, Integer count,
-                                 Integer countOfSales, BigDecimal averageEstimation) {
-        if (!sellers.exists(sellerId)) {
-            throw new EntityNotFoundException("Продавец не найден или заблокирован: " + sellerId);
+    public ProductResponse createProduct(
+            Long userId,
+            String name,
+            BigDecimal price,
+            Integer count,
+            Integer countOfSales,
+            BigDecimal averageEstimation
+    ){
+        if(!sellers.exists(userId)){
+            throw new EntityNotFoundException("Продавец не найден: " + userId);
         }
 
-        Product created = repo.create(sellerId, name, price, count, countOfSales, averageEstimation);
-        publisher.publishCreated(created);
-        return created;
+        Product product = new Product(
+                userId,
+                name,
+                price,
+                count,
+                countOfSales,
+                averageEstimation
+        );
+
+        Product created = repo.save(product);
+
+        ProductResponse response = getProductById(created.getProductId());
+
+        afterCommit(() -> publisher.publishCreated(created));
+
+        return response;
     }
 
     @Transactional
-    public void updateProduct(Long productId, Long callerId, boolean isAdmin,
-                              String name, BigDecimal price, Integer count,
-                              Integer countOfSales, BigDecimal averageEstimation) {
-        Product existing = getProductById(productId);
+    public void updateProduct(
+            Long productId,
+            Long callerId,
+            Boolean isAdmin,
+            String name,
+            BigDecimal price,
+            Integer count,
+            Integer countOfSales,
+            BigDecimal averageEstimation
+    ) {
+        Product product = findEntityById(productId);
 
-        if (!isAdmin && !existing.getSellerId().equals(callerId)) {
-            throw new AccessDeniedException("Товар принадлежит другому продавцу");
-        }
+        checkAccess(product, callerId, isAdmin);
 
-        repo.update(productId, existing.getSellerId(), name, price, count, countOfSales, averageEstimation);
-        publisher.publishUpdated(getProductById(productId));
+        product.setName(name);
+        product.setPrice(price);
+        product.setCount(count);
+        product.setCountOfSales(countOfSales);
+        product.setAverageEstimation(averageEstimation);
+
+        afterCommit(() -> publisher.publishUpdated(product));
     }
 
     @Transactional
-    public void deleteProduct(Long productId, Long callerId, boolean isAdmin) {
-        Product existing = getProductById(productId);
+    public void deleteProduct(
+            Long productId,
+            Long callerId,
+            boolean isAdmin
+    ){
+        Product product = findEntityById(productId);
 
-        if (!isAdmin && !existing.getSellerId().equals(callerId)) {
-            throw new AccessDeniedException("Товар принадлежит другому продавцу");
-        }
+        checkAccess(product, callerId, isAdmin);
 
-        repo.deleteById(productId, existing.getSellerId());
+        Long sellerId = product.getSellerId();
 
-        publisher.publishDeleted(productId, existing.getSellerId());
+        repo.delete(product);
+
+        afterCommit(() -> publisher.publishDeleted(productId, sellerId));
     }
+
+    private void checkAccess(
+            Product product,
+            Long callerId,
+            boolean isAdmin
+    ){
+        if (!isAdmin && !product.getSellerId().equals(callerId)) {
+            throw new AccessDeniedException(
+                    "Товар принадлежит другому продавцу");
+        }
+    }
+
+    private Product findEntityById(Long productId){
+        return repo.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Товар не найден: " + productId));
+    }
+
+    private void afterCommit(Runnable action){
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit(){
+                        action.run();
+                    }
+                }
+        );
+    }
+
 }

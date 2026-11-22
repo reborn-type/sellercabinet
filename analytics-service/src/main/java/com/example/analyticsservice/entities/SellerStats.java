@@ -3,6 +3,10 @@ package com.example.analyticsservice.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class SellerStats {
     private Long sellerId;
     private Integer totalProducts;

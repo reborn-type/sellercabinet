@@ -1,40 +1,50 @@
 package com.example.productservice.repository;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.example.productservice.entities.SellerProjection;
+import org.springframework.transaction.annotation.Transactional;
+
 
 @Repository
-public class SellerProjectionRepository {
-    private final JdbcTemplate jdbc;
+public interface SellerProjectionRepository extends JpaRepository<SellerProjection, Long> {
 
-    public SellerProjectionRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    default boolean exists(Long userId){
+        return existsById(userId);
     }
 
-    public void upsert(Long sellerId, String firstName, String lastName, String email) {
-        jdbc.update("""
-            INSERT INTO sellers_projection (seller_id, first_name, last_name, email, updated_at)
-            VALUES (?,?,?,?, NOW())
-            ON CONFLICT (seller_id) DO UPDATE
-            SET first_name=EXCLUDED.first_name,
-                last_name=EXCLUDED.last_name,
-                email=EXCLUDED.email,
-                updated_at=NOW();
-            """, sellerId, firstName, lastName, email);
-    }
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Transactional
+    @Query(value = """
+            INSERT INTO sellers_projection (
+                user_id, first_name, last_name, email, updated_at
+            )
+            VALUES (
+                :userId,
+                :firstName,
+                :lastName,
+                :email,
+                now()
+            )
+            ON CONFLICT (user_id) DO update
+            SET first_name = excluded.first_name,
+                last_name = excluded.last_name,
+                email = excluded.email,
+                updated_at = now()
+            """, nativeQuery = true)
+    public void upsert(
+            @Param("userId") Long userId,
+            @Param("firstName") String firstName,
+            @Param("lastName") String lastName,
+            @Param("email") String email
+    );
 
-    public void markBlocked(Long sellerId) {
-        jdbc.update("UPDATE sellers_projection SET status='BLOCKED' WHERE seller_id=?", sellerId);
-    }
-
-    public void delete(Long sellerId) {
-        jdbc.update("DELETE FROM sellers_projection WHERE seller_id=?", sellerId);
-    }
-
-    public boolean exists(Long sellerId) {
-        Boolean b = jdbc.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM sellers_projection WHERE seller_id=?);",
-                Boolean.class, sellerId);
-        return Boolean.TRUE.equals(b);
-    }
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Transactional
+    @Query("DELETE FROM SellerProjection s WHERE s.userId = :userId")
+    public void delete(@Param("userId") Long userId);
 }

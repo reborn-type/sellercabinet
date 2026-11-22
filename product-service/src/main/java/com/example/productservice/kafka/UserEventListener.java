@@ -33,6 +33,6 @@ public class UserEventListener {
     @Transactional
     public void onUserDeleted(UserDeletedEvent e){
         projections.delete(e.sellerId());
-        products.deleteAllBySeller(e.sellerId());
+        products.deleteAllBySellerId(e.sellerId());
     }
 }

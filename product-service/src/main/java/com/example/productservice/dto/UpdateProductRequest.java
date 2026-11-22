@@ -2,6 +2,10 @@ package com.example.productservice.dto;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record UpdateProductRequest(
 
         @NotBlank(message = "Название товара обазятельно")

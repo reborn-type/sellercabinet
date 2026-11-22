@@ -3,19 +3,45 @@ import com.fasterxml.jackson.databind.BeanProperty;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import jakarta.persistence.*;
+
+@Table(name = "products")
+@Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
     private Long productId;
-    private Long sellerId;
+
+    @Column(name = "user_product_id", nullable = false)
+    private Long userProductId;
+
+    @Column(name = "user_id", nullable = false, updatable = false)
+    private Long userId;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private BigDecimal price;
+
+    @Column(nullable = false)
     private Integer count;
+
+    @Column(name = "count_of_sales", nullable = false)
     private Integer countOfSales;
+
+    @Column(name = "average_estimation", nullable = false)
     private BigDecimal averageEstimation;
 
     public Product() {}
 
-    public Product(Long sellerId, String name, BigDecimal price, Integer count, Integer countOfSales, BigDecimal averageEstimation) {
-        this.sellerId = sellerId;
+    public Product(Long userId, String name, BigDecimal price, Integer count, Integer countOfSales, BigDecimal averageEstimation) {
+        this.userId = userId;
         this.name = name;
         this.price = price;
         this.count = count;
@@ -32,12 +58,20 @@ public class Product {
         this.productId = productId;
     }
 
-    public Long getSellerId() {
-        return sellerId;
+    public Long getUserProductId() {
+        return userProductId;
     }
 
-    public void setSellerId(Long sellerId) {
-        this.sellerId = sellerId;
+    public void setUserProductId(Long userProductId) {
+        this.userProductId = userProductId;
+    }
+
+    public Long getSellerId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getName() {

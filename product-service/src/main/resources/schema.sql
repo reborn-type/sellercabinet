@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS products (
     product_id BIGSERIAL PRIMARY KEY,
-    seller_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
     name VARCHAR(200) NOT NULL,
     price NUMERIC(14,2) NOT NULL,
     count INT NOT NULL,
@@ -14,10 +14,11 @@ CREATE TABLE IF NOT EXISTS products (
     CONSTRAINT chk_product_estimation CHECK (average_estimation BETWEEN 1.00 and 5.00)
 );
 
-CREATE INDEX IF NOT EXISTS idx_products_seller ON products(seller_id);
+CREATE INDEX IF NOT EXISTS idx_products_seller ON products(user_id);
+CREATE INDEX IF NOT EXISTS idx_products_seller_product ON products(user_id, product_id);
 
 CREATE TABLE IF NOT EXISTS sellers_projection (
-    seller_id BIGINT PRIMARY KEY,
+    user_id BIGINT PRIMARY KEY,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
     email VARCHAR(200),

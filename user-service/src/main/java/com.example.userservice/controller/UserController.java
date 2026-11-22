@@ -28,23 +28,23 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<User> getAll(){
+    public List<UserResponse> getAll(){
         return userService.getAllUsers();
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<User> getById(@PathVariable @Positive  Long userId) {
+    public ResponseEntity<UserResponse> getById(@PathVariable @Positive  Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> create(
+    public ResponseEntity<UserResponse> create(
            @Valid @RequestBody CreateUserRequest req
     ){
-        User created = userService.createUser(req.firstName(), req.lastName(),
-                req.age(), req.email(), "SELLER", "ACTIVE");
-        return ResponseEntity.created(URI.create("/api/users/" + created.getUserId())).body(created);
+        UserResponse created = userService.createUser(req.firstName(), req.lastName(),
+                req.age(), req.email(), "SELLER");
+        return ResponseEntity.created(URI.create("/api/users/" + created.userId())).body(created);
     }
 
     @PutMapping("/{userId}")
