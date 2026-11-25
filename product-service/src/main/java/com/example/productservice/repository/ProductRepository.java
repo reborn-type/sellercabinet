@@ -41,7 +41,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>{
             ORDER BY p.productId
             """
     )
-    List<ProductResponse> findResponseBySellerId(@Param("userId") Long userId);
+    List<ProductResponse> findResponseByUserId(@Param("userId") Long userId);
 
     @Query(
             """
@@ -85,5 +85,5 @@ public interface ProductRepository extends JpaRepository<Product, Long>{
             DELETE FROM Product p WHERE p.userId = :userId
             """
     )
-    int deleteAllBySellerId(@Param("userId") Long userId);
+    int deleteAllByUserId(@Param("userId") Long userId);
 }

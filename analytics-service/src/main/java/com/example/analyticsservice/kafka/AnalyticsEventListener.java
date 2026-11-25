@@ -21,7 +21,7 @@ public class AnalyticsEventListener {
     public void onProductCreated(ProductCreatedEvent event) {
         repository.upsertProduct(
                 event.productId(),
-                event.sellerId(),
+                event.userId(),
                 event.price(),
                 event.count(),
                 event.countOfSales(),
@@ -34,7 +34,7 @@ public class AnalyticsEventListener {
     public void onProductUpdated(ProductCreatedEvent event) {
         repository.upsertProduct(
                 event.productId(),
-                event.sellerId(),
+                event.userId(),
                 event.price(),
                 event.count(),
                 event.countOfSales(),
@@ -45,6 +45,6 @@ public class AnalyticsEventListener {
     @KafkaListener(topics = "product.deleted", groupId = "analytics-service")
     @Transactional
     public void onProductDeleted(ProductDeletedEvent event) {
-        repository.deleteProduct(event.productId(), event.sellerId());
+        repository.deleteProduct(event.productId(), event.userId());
     }
 }

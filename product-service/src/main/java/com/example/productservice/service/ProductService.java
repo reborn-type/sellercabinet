@@ -44,7 +44,7 @@ public class ProductService {
     }
 
     public List<ProductResponse> getProductsBySeller(Long userId) {
-        return repo.findResponseBySellerId(userId);
+        return repo.findResponseByUserId(userId);
     }
 
     public Long getSellerSales(Long userId) {
@@ -120,11 +120,11 @@ public class ProductService {
 
         checkAccess(product, callerId, isAdmin);
 
-        Long sellerId = product.getSellerId();
+        Long userId = product.getUserId();
 
         repo.delete(product);
 
-        afterCommit(() -> publisher.publishDeleted(productId, sellerId));
+        afterCommit(() -> publisher.publishDeleted(productId, userId));
     }
 
     private void checkAccess(
@@ -132,7 +132,7 @@ public class ProductService {
             Long callerId,
             boolean isAdmin
     ){
-        if (!isAdmin && !product.getSellerId().equals(callerId)) {
+        if (!isAdmin && !product.getUserId().equals(callerId)) {
             throw new AccessDeniedException(
                     "Товар принадлежит другому продавцу");
         }

@@ -66,7 +66,7 @@ public class Product {
         this.userProductId = userProductId;
     }
 
-    public Long getSellerId() {
+    public Long getUserId() {
         return userId;
     }
 

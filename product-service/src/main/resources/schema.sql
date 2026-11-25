@@ -1,3 +1,27 @@
+-- Rename the legacy column in databases created before user_id was introduced.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'products'
+          AND column_name = 'seller_id'
+    ) THEN
+        ALTER TABLE products RENAME COLUMN seller_id TO user_id;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'sellers_projection'
+          AND column_name = 'seller_id'
+    ) THEN
+        ALTER TABLE sellers_projection RENAME COLUMN seller_id TO user_id;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS products (
     product_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,

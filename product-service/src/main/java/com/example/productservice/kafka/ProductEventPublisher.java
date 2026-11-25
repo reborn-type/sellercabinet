@@ -17,19 +17,19 @@ public class ProductEventPublisher {
     }
 
     public void publishCreated(Product p){
-        kafka.send("product.created", String.valueOf(p.getSellerId()),
-                new ProductCreatedEvent(p.getProductId(), p.getSellerId(), p.getName(),
-                        p.getPrice(), p.getCount(), p.getCountOfSales(), p.getAverageEstimation(), Instant.now()));
+        kafka.send("product.created", String.valueOf(p.getUserId()),
+                new ProductCreatedEvent(p.getProductId(), p.getUserId(), p.getName(),
+                        p.getPrice(), p.getCount(), p.getCountOfSales().longValue(), p.getAverageEstimation(), Instant.now()));
     }
 
     public void publishUpdated(Product p) {
-        kafka.send("product.updated", String.valueOf(p.getSellerId()),
-                new ProductCreatedEvent(p.getProductId(), p.getSellerId(), p.getName(),
-                        p.getPrice(), p.getCount(), p.getCountOfSales(), p.getAverageEstimation(), Instant.now()));
+        kafka.send("product.updated", String.valueOf(p.getUserId()),
+                new ProductCreatedEvent(p.getProductId(), p.getUserId(), p.getName(),
+                        p.getPrice(), p.getCount(), p.getCountOfSales().longValue(), p.getAverageEstimation(), Instant.now()));
     }
 
-    public void publishDeleted(Long productId, Long sellerId) {
-        kafka.send("product.deleted", String.valueOf(sellerId),
-                new ProductDeletedEvent(productId, sellerId, Instant.now()));
+    public void publishDeleted(Long productId, Long userId) {
+        kafka.send("product.deleted", String.valueOf(userId),
+                new ProductDeletedEvent(productId, userId, Instant.now()));
     }
 }

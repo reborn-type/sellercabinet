@@ -1,80 +1,118 @@
 package com.example.analyticsservice.repository;
 
+import com.example.analyticsservice.dto.SellerStatsResponse;
 import com.example.analyticsservice.entities.SellerStats;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import com.example.analyticsservice.entities.SellerStats;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public class AnalyticsRepository {
-    private final JdbcTemplate jdbc;
+public interface AnalyticsRepository extends JpaRepository<SellerStats, Long> {
 
-    public AnalyticsRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
 
-    private final RowMapper<SellerStats> ROW_MAPPER = (rs, i) -> {
-        SellerStats s = new SellerStats();
-        s.setSellerId(rs.getLong("seller_id"));
-        s.setTotalProducts(rs.getInt("total_products"));
-        s.setTotalSales(rs.getLong("total_sales"));
-        s.setTotalStockValue(rs.getBigDecimal("total_stock_value"));
-        s.setAverageEstimation(rs.getBigDecimal("average_estimation"));
-        s.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
-        return s;
-    };
+    @Query("""
+            select new com.example.analyticsservice.dto.SellerStatsResponse(
+                s.userId, s.totalProducts, s.totalSales,
+                s.totalStockValue, s.averageEstimation, s.updatedAt
+            )
+            from SellerStats s
+            order by s.totalSales desc
+            """)
+    List<SellerStatsResponse> getAllStats();
 
-    public void upsertProduct(Long productId, Long sellerId, BigDecimal price,
-                              Integer count, Integer countOfSales, BigDecimal averageEstimation) {
-        jdbc.update("""
-            INSERT INTO analytics_products (product_id, seller_id, price, count, count_of_sales, average_estimation)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT (product_id) DO UPDATE SET
-                price = EXCLUDED.price,
-                count = EXCLUDED.count,
-                count_of_sales = EXCLUDED.count_of_sales,
-                average_estimation = EXCLUDED.average_estimation;
-            """, productId, sellerId, price, count, countOfSales, averageEstimation);
+    @Query("""
+            select new com.example.analyticsservice.dto.SellerStatsResponse(
+                s.userId, s.totalProducts, s.totalSales,
+                s.totalStockValue, s.averageEstimation, s.updatedAt
+            )
+            from SellerStats s
+            where s.userId = :userId
+            """)
+    Optional<SellerStatsResponse> getStatsByUserId(@Param("userId") Long userId);
 
-        recalculateSellerStats(sellerId);
-    }
 
-    public void deleteProduct(Long productId, Long sellerId) {
-        jdbc.update("DELETE FROM analytics_products WHERE product_id = ?", productId);
-        recalculateSellerStats(sellerId);
-    }
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+            insert into seller_stats (user_id)
+            values(:userId)
+            on conflict (user_id) do nothing
+            """, nativeQuery = true)
+    void ensureSellerStats(@Param("userId") Long userId);
 
-    private void recalculateSellerStats(Long sellerId) {
-        jdbc.update("""
-            INSERT INTO seller_stats (seller_id, total_products, total_sales, total_stock_value, average_estimation, updated_at)
-            SELECT 
-                ?,
-                COUNT(*),
-                COALESCE(SUM(count_of_sales), 0),
-                COALESCE(SUM(price * count), 0),
-                COALESCE(AVG(average_estimation), 0),
-                NOW()
-            FROM analytics_products
-            WHERE seller_id = ?
-            ON CONFLICT (seller_id) DO UPDATE SET
-                total_products = EXCLUDED.total_products,
-                total_sales = EXCLUDED.total_sales,
-                total_stock_value = EXCLUDED.total_stock_value,
-                average_estimation = EXCLUDED.average_estimation,
-                updated_at = NOW();
-            """, sellerId, sellerId);
-    }
+    @Query(value = """
+            select user_id
+            from seller_stats
+            where user_id = :userId
+            for update
+            """, nativeQuery = true)
+    Long lockSellerStats(@Param("userId") Long userId);
 
-    public List<SellerStats> getAllStats() {
-        return jdbc.query("SELECT * FROM seller_stats ORDER BY total_sales DESC", ROW_MAPPER);
-    }
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+            insert into analytics_products (
+                product_id, user_id, price, count,
+                count_of_sales, average_estimation
+            )
+            values (
+                :productId, :userId, :price, :count,
+                :countOfSales, :averageEstimation
+            )
+            on conflict (product_id) do update
+            set price = excluded.price,
+                count = excluded.count,
+                count_of_sales = excluded.count_of_sales,
+                average_estimation = excluded.average_estimation
+            """, nativeQuery = true)
+    void upsertProduct(
+            @Param("productId") Long productId,
+            @Param("userId") Long userId,
+            @Param("price") BigDecimal price,
+            @Param("count") Integer count,
+            @Param("countOfSales") Long countOfSales,
+            @Param("averageEstimation") BigDecimal averageEstimation
+    );
 
-    public SellerStats getStatsBySellerId(Long sellerId) {
-        List<SellerStats> list = jdbc.query(
-                "SELECT * FROM seller_stats WHERE seller_id = ?", ROW_MAPPER, sellerId);
-        return list.isEmpty() ? null : list.get(0);
-    }
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(
+            value = """
+            update seller_stats s
+            set total_products = totals.total_products,
+                total_sales = totals.total_sales,
+                total_stock_value = totals.total_stock_value,
+                average_estimation = totals.average_estimation,
+                updated_at = NOW()
+            from (
+                select count(*) as total_products, 
+                    coalesce(sum(count_of_sales), 0) as total_sales, 
+                    coalesce(sum(price * count), 0) as total_stock_value, 
+                    coalesce(avg(average_estimation), 0) as average_estimation
+                from analytics_products    
+                where user_id = :userId
+            ) totals
+            where s.user_id = :userId
+            """, nativeQuery = true)
+    void recalculateSellerStats(@Param("userId") Long userId);
+
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+        delete from analytics_products
+        where product_id = :productId
+          and user_id = :userId
+        """, nativeQuery = true)
+    void deleteProduct(
+            @Param("productId") Long productId,
+            @Param("userId") Long userId);
+
 }

@@ -6,17 +6,34 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "seller_stats")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class SellerStats {
-    private Long sellerId;
+
+    @Id
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "total_products")
     private Integer totalProducts;
+
+    @Column(name = "total_sales")
     private Long totalSales;
+
+    @Column(name = "total_stock_value")
     private BigDecimal totalStockValue;
+
+    @Column(name = "average_estimation")
     private BigDecimal averageEstimation;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Long getSellerId() { return sellerId; }
-    public void setSellerId(Long sellerId) { this.sellerId = sellerId; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
     public Integer getTotalProducts() { return totalProducts; }
     public void setTotalProducts(Integer totalProducts) { this.totalProducts = totalProducts; }

@@ -26,13 +26,13 @@ public class UserEventListener {
     @KafkaListener(topics = "user.updated", groupId = "product-service")
     @Transactional
     public void onUserUpdated(UserUpdatedEvent e){
-        projections.upsert(e.sellerId(), e.firstName(), e.lastName(), e.email());
+        projections.upsert(e.userId(), e.firstName(), e.lastName(), e.email());
     }
 
     @KafkaListener(topics = "user.deleted", groupId = "product-service")
     @Transactional
     public void onUserDeleted(UserDeletedEvent e){
-        projections.delete(e.sellerId());
-        products.deleteAllBySellerId(e.sellerId());
+        projections.delete(e.userId());
+        products.deleteAllByUserId(e.userId());
     }
 }
