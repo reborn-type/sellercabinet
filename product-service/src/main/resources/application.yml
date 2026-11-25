@@ -6,6 +6,10 @@ spring:
       mode: always
       schema-locations: classpath:schema.sql
   datasource:
+    hikari:
+      pool-name: product-pool
+      maximum-pool-size: 5
+      connection-timeout: 30000
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/products}
     username: ${SPRING_DATASOURCE_USERNAME:user}
     password: ${SPRING_DATASOURCE_PASSWORD:user}

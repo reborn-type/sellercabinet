@@ -1,64 +1,36 @@
 package com.example.authservice.repository;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
+import com.example.authservice.entities.RefreshToken;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.Optional;
 
-@Repository
-public class RefreshTokenRepository {
+public interface RefreshTokenRepository
+        extends JpaRepository<RefreshToken, Long> {
 
-    private final JdbcTemplate jdbc;
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        select t
+        from RefreshToken t
+        where t.tokenHash = :tokenHash
+        """)
+    Optional<RefreshToken> findByTokenHashForUpdate(
+            @Param("tokenHash") String tokenHash);
 
-    public RefreshTokenRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
-
-    public record StoredRefresh(
-            Long userId,
-            Instant expiresAt
-    ) {}
-
-    public void save(
-            Long userId,
-            String tokenHash,
-            Instant expiresAt
-    ) {
-        jdbc.update(
-                """
-                INSERT INTO refresh_tokens (
-                    user_id,
-                    token_hash,
-                    expires_at
-                )
-                VALUES (?, ?, ?)
-                """,
-                userId,
-                tokenHash,
-                java.sql.Timestamp.from(expiresAt)
-        );
-    }
-
-    public Optional<StoredRefresh> consumeByHash(String tokenHash) {
-        return jdbc.query(
-                """
-                DELETE FROM refresh_tokens
-                WHERE token_hash = ?
-                RETURNING user_id, expires_at
-                """,
-                (resultSet, rowNumber) -> new StoredRefresh(
-                        resultSet.getLong("user_id"),
-                        resultSet.getTimestamp("expires_at").toInstant()
-                ),
-                tokenHash
-        ).stream().findFirst();
-    }
-
-    public void deleteAllByUserId(Long userId) {
-        jdbc.update(
-                "DELETE FROM refresh_tokens WHERE user_id = ?",
-                userId
-        );
-    }
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
+    @Transactional
+    @Query("""
+        delete from RefreshToken t
+        where t.userId = :userId
+        """)
+    void deleteAllByUserId(@Param("userId") Long userId);
 }

@@ -2,11 +2,19 @@ server:
   port: 8080
 
 spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
   sql:
     init:
       mode: always
       schema-locations: classpath:schema.sql
   datasource:
+    hikari:
+      pool-name: auth-pool
+      maximum-pool-size: 5
+      connection-timeout: 30000
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/auth}
     username: ${SPRING_DATASOURCE_USERNAME:user}
     password: ${SPRING_DATASOURCE_PASSWORD:user}

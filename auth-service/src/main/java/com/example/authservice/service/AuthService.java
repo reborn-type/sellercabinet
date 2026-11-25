@@ -3,25 +3,32 @@ package com.example.authservice.service;
 import com.example.authservice.dto.LoginRequest;
 import com.example.authservice.dto.RegisterRequest;
 import com.example.authservice.dto.TokenPair;
+import com.example.authservice.entities.Credential;
+import com.example.authservice.entities.RefreshToken;
+import com.example.authservice.exception.EmailAlreadyExistsException;
+import com.example.authservice.exception.InvalidCredentialsException;
+import com.example.authservice.exception.InvalidRefreshTokenException;
 import com.example.authservice.kafka.AuthEventPublisher;
+import com.example.authservice.model.UserRole;
 import com.example.authservice.repository.CredentialRepository;
 import com.example.authservice.repository.RefreshTokenRepository;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
-
-import com.example.authservice.model.UserRole;
-import com.example.authservice.exception.*;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
 @Service
 public class AuthService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final CredentialRepository credentials;
     private final RefreshTokenRepository refreshTokens;
@@ -30,14 +37,13 @@ public class AuthService {
     private final AuthEventPublisher eventPublisher;
     private final RefreshTokenHasher refreshTokenHasher;
 
-
-    public AuthService(CredentialRepository credentials,
-                       RefreshTokenRepository refreshTokens,
-                       TokenService tokenService,
-                       PasswordEncoder passwordEncoder,
-                       AuthEventPublisher eventPublisher,
-                       RefreshTokenHasher refreshTokenHasher
-    ) {
+    public AuthService(
+            CredentialRepository credentials,
+            RefreshTokenRepository refreshTokens,
+            TokenService tokenService,
+            PasswordEncoder passwordEncoder,
+            AuthEventPublisher eventPublisher,
+            RefreshTokenHasher refreshTokenHasher) {
         this.credentials = credentials;
         this.refreshTokens = refreshTokens;
         this.tokenService = tokenService;
@@ -46,76 +52,6 @@ public class AuthService {
         this.refreshTokenHasher = refreshTokenHasher;
     }
 
-    private static final SecureRandom SECURE_RANDOM =
-            new SecureRandom();
-
-    private String createRefreshToken(Long userId) {
-        String rawToken = generateRawRefreshToken();
-        String tokenHash = refreshTokenHasher.hash(rawToken);
-
-        refreshTokens.save(
-                userId,
-                tokenHash,
-                Instant.now().plus(7, ChronoUnit.DAYS)
-        );
-
-        return rawToken;
-    }
-
-    private String generateRawRefreshToken() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-
-        return Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(bytes);
-    }
-
-    @Transactional(
-            noRollbackFor = InvalidRefreshTokenException.class
-    )
-    public TokenPair refresh(String oldRawRefreshToken) {
-        String oldTokenHash =
-                refreshTokenHasher.hash(oldRawRefreshToken);
-
-        var stored = refreshTokens.consumeByHash(oldTokenHash)
-                .orElseThrow(() ->
-                        new InvalidRefreshTokenException(
-                                "Недействительный refresh токен"
-                        )
-                );
-
-        if (stored.expiresAt().isBefore(Instant.now())) {
-            throw new InvalidRefreshTokenException(
-                    "Refresh токен истек"
-            );
-        }
-
-        var credential = credentials.findByUserId(stored.userId())
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "Пользователь не найден"
-                        )
-                );
-
-        String newAccessToken =
-                tokenService.generateAccessToken(
-                        credential.userId(),
-                        credential.role()
-                );
-
-        String newRefreshToken =
-                createRefreshToken(credential.userId());
-
-        return new TokenPair(
-                newAccessToken,
-                newRefreshToken
-        );
-    }
-
-
-
-
     @Transactional
     public TokenPair register(RegisterRequest req) {
         if (credentials.existsByEmail(req.email())) {
@@ -123,34 +59,119 @@ public class AuthService {
         }
 
         String role = UserRole.SELLER.name();
+        Credential created;
 
-        Long userId = credentials.save(
+        try {
+            created = credentials.saveAndFlush(new Credential(
+                    req.email(),
+                    passwordEncoder.encode(req.password()),
+                    role
+            ));
+        } catch (DataIntegrityViolationException exception) {
+            if (exception.getCause()
+                    instanceof ConstraintViolationException violation
+                    && ("uk_auth_credentials_email"
+                    .equals(violation.getConstraintName())
+                    || "auth_credentials_email_key"
+                    .equals(violation.getConstraintName()))) {
+                throw new EmailAlreadyExistsException();
+            }
+
+            throw exception;
+        }
+
+        TokenPair tokens = issueTokens(created);
+        Long userId = created.getUserId();
+
+        afterCommit(() -> eventPublisher.publishRegistrationRequested(
+                userId,
+                req.firstName(),
+                req.lastName(),
+                req.age(),
                 req.email(),
-                passwordEncoder.encode(req.password()),
                 role
-        );
+        ));
 
-        eventPublisher.publishRegistrationRequested(
-                userId, req.firstName(), req.lastName(), req.age(), req.email(), role
-        );
-
-        String access = tokenService.generateAccessToken(userId, role);
-        String refresh = createRefreshToken(userId);
-        return new TokenPair(access, refresh);
+        return tokens;
     }
 
     @Transactional
     public TokenPair login(LoginRequest req) {
-        var cred = credentials.findByEmail(req.email())
+        Credential credential = credentials.findByEmail(req.email())
                 .orElseThrow(InvalidCredentialsException::new);
 
-        if (!passwordEncoder.matches(req.password(), cred.passwordHash())) {
+        if (!passwordEncoder.matches(
+                req.password(),
+                credential.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
 
-        String access = tokenService.generateAccessToken(cred.userId(), cred.role());
-        String refresh = createRefreshToken(cred.userId());
-        return new TokenPair(access, refresh);
+        return issueTokens(credential);
     }
 
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
+    public TokenPair refresh(String oldRawRefreshToken) {
+        String oldTokenHash = refreshTokenHasher.hash(
+                oldRawRefreshToken);
+
+        RefreshToken stored = refreshTokens
+                .findByTokenHashForUpdate(oldTokenHash)
+                .orElseThrow(() -> new InvalidRefreshTokenException(
+                        "Недействительный refresh токен"));
+
+        refreshTokens.delete(stored);
+        refreshTokens.flush();
+
+        if (!stored.getExpiresAt().isAfter(Instant.now())) {
+            throw new InvalidRefreshTokenException(
+                    "Refresh токен истек");
+        }
+
+        Credential credential = credentials
+                .findById(stored.getUserId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Пользователь не найден"));
+
+        return issueTokens(credential);
+    }
+
+    private TokenPair issueTokens(Credential credential) {
+        String accessToken = tokenService.generateAccessToken(
+                credential.getUserId(),
+                credential.getRole()
+        );
+
+        String refreshToken = createRefreshToken(
+                credential.getUserId());
+
+        return new TokenPair(accessToken, refreshToken);
+    }
+
+    private String createRefreshToken(Long userId) {
+        byte[] bytes = new byte[32];
+        SECURE_RANDOM.nextBytes(bytes);
+
+        String rawToken = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(bytes);
+
+        refreshTokens.save(new RefreshToken(
+                userId,
+                refreshTokenHasher.hash(rawToken),
+                Instant.now().plus(7, ChronoUnit.DAYS)
+        ));
+
+        return rawToken;
+    }
+
+    private void afterCommit(Runnable action) {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        action.run();
+                    }
+                }
+        );
+    }
 }
