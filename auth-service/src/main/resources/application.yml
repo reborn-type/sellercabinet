@@ -8,8 +8,13 @@ spring:
     open-in-view: false
   sql:
     init:
-      mode: always
-      schema-locations: classpath:schema.sql
+      mode: never
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+
   datasource:
     hikari:
       pool-name: auth-pool

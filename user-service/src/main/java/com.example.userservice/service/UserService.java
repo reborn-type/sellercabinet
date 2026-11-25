@@ -34,28 +34,6 @@ public class UserService {
                 .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден: " + userId));
     }
 
-    @Transactional
-    public UserResponse createUser(String firstName, String lastName, Integer age, String email, String role){
-        String status = "ACTIVE";
-
-        User user = new User(
-                firstName,
-                lastName,
-                age,
-                email,
-                role,
-                status
-        );
-
-        User created = repo.save(user);
-
-        UserResponse response = getUserById(created.getUserId());
-
-        afterCommit(() -> publisher.publishCreated(created));
-
-        return response;
-    }
-
 
     @Transactional
     public void updateUser(

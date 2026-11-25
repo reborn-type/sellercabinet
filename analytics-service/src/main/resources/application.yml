@@ -12,7 +12,18 @@ spring:
     password: user
   sql:
     init:
-      mode: always
+      mode: never
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
   kafka:
     bootstrap-servers: localhost:9092
     consumer:

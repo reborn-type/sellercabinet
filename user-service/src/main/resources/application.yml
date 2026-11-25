@@ -3,8 +3,18 @@ server:
 spring:
   sql:
     init:
-      mode: always
-      schema-locations: classpath:schema.sql
+      mode: never
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
   datasource:
     hikari:
       pool-name: user-pool
@@ -20,6 +30,8 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       group-id: user-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:

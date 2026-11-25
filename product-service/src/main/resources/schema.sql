@@ -6,7 +6,7 @@ BEGIN
         FROM information_schema.columns
         WHERE table_schema = current_schema()
           AND table_name = 'products'
-          AND column_name = 'seller_id'
+          AND column_name = 'selle r_id'
     ) THEN
         ALTER TABLE products RENAME COLUMN seller_id TO user_id;
     END IF;

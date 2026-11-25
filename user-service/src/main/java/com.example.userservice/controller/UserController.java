@@ -7,14 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.userservice.entities.User;
 import com.example.userservice.service.UserService;
-
-import com.example.userservice.dto.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
+import com.example.userservice.dto.*;
 
 @RestController
 @Validated
@@ -35,16 +33,6 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getById(@PathVariable @Positive  Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
-    }
-
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponse> create(
-           @Valid @RequestBody CreateUserRequest req
-    ){
-        UserResponse created = userService.createUser(req.firstName(), req.lastName(),
-                req.age(), req.email(), "SELLER");
-        return ResponseEntity.created(URI.create("/api/users/" + created.userId())).body(created);
     }
 
     @PutMapping("/{userId}")

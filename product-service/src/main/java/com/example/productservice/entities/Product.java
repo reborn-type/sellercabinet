@@ -17,7 +17,7 @@ public class Product {
     @Column(name = "product_id")
     private Long productId;
 
-    @Column(name = "user_product_id", nullable = false)
+    @Transient
     private Long userProductId;
 
     @Column(name = "user_id", nullable = false, updatable = false)
